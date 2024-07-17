@@ -29,6 +29,7 @@ class Task {
 
 const tasksStorage = StableBTreeMap<string, Task>(0);
 
+// Helper function to find a task by id
 const taskFinder = (id: string) => {
     return tasksStorage.get(id);
 };
@@ -37,16 +38,21 @@ export default Server(() => {
     const app = express();
     app.use(express.json());
 
+    // Endpoints
+
+    // Endpoint to create a new task
     app.post("/tasks", (req: Request, res: Response) => {
         const task: Task = { id: uuidv4(), createdAt: getCurrentDate(), ...req.body, updatedAt: null, completed: false };
         tasksStorage.insert(task.id, task);
         return res.status(201).json(task);
     });
 
+    // Endpoint to get all tasks
     app.get("/tasks", (req: Request, res: Response) => {
         return res.status(200).json(tasksStorage.values());
     });
 
+    // Endpoint to get a task by id
     app.get("/tasks/:id", (req: Request, res: Response) => {
         const taskId = req.params.id;
         const taskOpt = taskFinder(taskId);
@@ -57,7 +63,9 @@ export default Server(() => {
         }
     });
 
-    app.put("/tasks/:id", (req: Request, res: Response) => {
+
+    // Endpoint to update a task by id
+    app.put("/tasks/update/:id", (req: Request, res: Response) => {
         const taskId = req.params.id;
         const taskOpt = taskFinder(taskId);
         if ("None" in taskOpt) {
@@ -70,7 +78,8 @@ export default Server(() => {
         }
     });
 
-    app.delete("/tasks/:id", (req: Request, res: Response) => {
+    // Endpoint to delete a task by id
+    app.delete("/tasks/delete/:id", (req: Request, res: Response) => {
         const taskId = req.params.id;
         const deletedTask = tasksStorage.remove(taskId);
         if ("None" in deletedTask) {
@@ -80,12 +89,66 @@ export default Server(() => {
         }
     });
 
+    // Endpoint to search tasks by title
+    app.get("/tasks/search/:title", (req: Request, res: Response) => {
+        const title = req.params.title;
+        const tasks = tasksStorage.values().filter(task => task.title.toLowerCase().includes(title.toLowerCase()));
+    
+        if (tasks.length === 0) {
+            return res.status(404).json({ error: `No tasks found with title '${title}'` });
+        } else {
+            return res.status(200).json(tasks);
+        }
+    });
+
+    // Endpoint to mark a task as completed
+    app.put("/tasks/complete/:id", (req: Request, res: Response) => {
+        const taskId = req.params.id;
+        const taskOpt = taskFinder(taskId);
+        if ("None" in taskOpt) {
+            return res.status(400).send(`Couldn't update the task with id=${taskId}. Task not found`);
+        } else {
+            const task = taskOpt.Some;
+            const updatedTask = { ...task, completed: true, updatedAt: getCurrentDate() };
+            tasksStorage.insert(task.id, updatedTask);
+            return res.status(200).json(updatedTask);
+        }
+    });
+
+    // Endpoint to mark a task as incomplete
+    app.put("/tasks/incomplete/:id", (req: Request, res: Response) => {
+        const taskId = req.params.id;
+        const taskOpt = taskFinder(taskId);
+        if ("None" in taskOpt) {
+            return res.status(400).send(`Couldn't update the task with id=${taskId}. Task not found`);
+        } else {
+            const task = taskOpt.Some;
+            const updatedTask = { ...task, completed: false, updatedAt: getCurrentDate() };
+            tasksStorage.insert(task.id, updatedTask);
+            return res.status(200).json(updatedTask);
+        }
+    });
+
+    // Endpoint to get all completed tasks
+    app.get("/tasks/completed", (req: Request, res: Response) => {
+        const tasks = tasksStorage.values().filter(task => task.completed);
+        return res.status(200).json(tasks);
+    });
+
+    // Endpoint to get all incomplete tasks
+    app.get("/tasks/incomplete", (req: Request, res: Response) => {
+        const tasks = tasksStorage.values().filter(task => !task.completed);
+        return res.status(200).json(tasks);
+    });
+  
+    // Start the server    
     const PORT = 4000;
     return app.listen(PORT, () => {
         console.log(`Server is running on port ${PORT}`);
     });
 });
 
+// Helper function to get the current date
 function getCurrentDate() {
     const timestamp = new Number(ic.time());
     return new Date(timestamp.valueOf() / 1000_000);
