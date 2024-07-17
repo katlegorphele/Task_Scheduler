@@ -140,6 +140,32 @@ export default Server(() => {
         const tasks = tasksStorage.values().filter(task => !task.completed);
         return res.status(200).json(tasks);
     });
+
+
+    // Endpoint to get all tasks due on a specific date
+    app.get("/tasks/due/:date", (req: Request, res: Response) => {
+        const dueDateString = req.params.date;
+        const dueDate = new Date(dueDateString);
+        if (isNaN(dueDate.getTime())) {
+            return res.status(400).send('Invalid date format. Please use YYYY-MM-DD');
+        }
+        const tasks = tasksStorage.values().filter(task => task.dueDate.toDateString() === dueDate.toDateString());
+        return res.status(200).json(tasks);
+    });
+
+    // Endpoint to get tasks in a specific date range
+    app.get("/tasks/due/:startDate/:endDate", (req: Request, res: Response) => {
+        const startDateString = req.params.startDate;
+        const endDateString = req.params.endDate;
+        const startDate = new Date(startDateString);
+        const endDate = new Date(endDateString);
+        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+            return res.status(400).send('Invalid date format. Please use YYYY-MM-DD');
+        }
+        const tasks = tasksStorage.values().filter(task => task.dueDate >= startDate && task.dueDate <= endDate);
+        return res.status(200).json(tasks);
+    });
+    
   
     // Start the server    
     const PORT = 4000;
