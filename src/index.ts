@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
 import { Server, StableBTreeMap, ic } from 'azle';
-import express, { Request, Response } from 'express';
+import express, { Request, Response, NextFunction } from 'express';
 
 /**
  * `tasksStorage` - key-value data structure used to store tasks.
@@ -38,10 +38,25 @@ export default Server(() => {
     const app = express();
     app.use(express.json());
 
+    // Middleware for error handling
+    app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+        console.error(err.stack);
+        res.status(500).send('Something broke!');
+    });
+
+    // Middleware for validating task data
+    const validateTask = (req: Request, res: Response, next: NextFunction) => {
+        const { title, description, dueDate } = req.body;
+        if (typeof title !== 'string' || typeof description !== 'string' || isNaN(Date.parse(dueDate))) {
+            return res.status(400).send('Invalid data format');
+        }
+        next();
+    };
+
     // Endpoints
 
     // Endpoint to create a new task
-    app.post("/tasks", (req: Request, res: Response) => {
+    app.post("/tasks", validateTask, (req: Request, res: Response) => {
         const task: Task = { id: uuidv4(), createdAt: getCurrentDate(), ...req.body, updatedAt: null, completed: false };
         tasksStorage.insert(task.id, task);
         return res.status(201).json(task);
@@ -63,9 +78,8 @@ export default Server(() => {
         }
     });
 
-
     // Endpoint to update a task by id
-    app.put("/tasks/update/:id", (req: Request, res: Response) => {
+    app.put("/tasks/update/:id", validateTask, (req: Request, res: Response) => {
         const taskId = req.params.id;
         const taskOpt = taskFinder(taskId);
         if ("None" in taskOpt) {
@@ -141,7 +155,6 @@ export default Server(() => {
         return res.status(200).json(tasks);
     });
 
-
     // Endpoint to get all tasks due on a specific date
     app.get("/tasks/due/:date", (req: Request, res: Response) => {
         const dueDateString = req.params.date;
@@ -165,8 +178,27 @@ export default Server(() => {
         const tasks = tasksStorage.values().filter(task => task.dueDate >= startDate && task.dueDate <= endDate);
         return res.status(200).json(tasks);
     });
-    
-  
+
+    // New Endpoint to get overdue tasks
+    app.get("/tasks/overdue", (req: Request, res: Response) => {
+        const currentDate = getCurrentDate();
+        const overdueTasks = tasksStorage.values().filter(task => task.dueDate < currentDate && !task.completed);
+        return res.status(200).json(overdueTasks);
+    });
+
+    // New Endpoint to get tasks created within a specific date range
+    app.get("/tasks/created/:startDate/:endDate", (req: Request, res: Response) => {
+        const startDateString = req.params.startDate;
+        const endDateString = req.params.endDate;
+        const startDate = new Date(startDateString);
+        const endDate = new Date(endDateString);
+        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+            return res.status(400).send('Invalid date format. Please use YYYY-MM-DD');
+        }
+        const tasks = tasksStorage.values().filter(task => task.createdAt >= startDate && task.createdAt <= endDate);
+        return res.status(200).json(tasks);
+    });
+
     // Start the server    
     const PORT = 4000;
     return app.listen(PORT, () => {

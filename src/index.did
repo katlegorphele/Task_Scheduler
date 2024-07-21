@@ -1,4 +1,220 @@
-service: () -> {
-    http_request: (record {url:text; method:text; body:vec nat8; headers:vec record {text; text}; certificate_version:opt nat16}) -> (record {body:vec nat8; headers:vec record {text; text}; upgrade:opt bool; streaming_strategy:opt variant {Callback:record {token:vec nat8; callback:func (vec nat8) -> (opt record {token:opt vec nat8; body:vec nat8}) query}}; status_code:nat16}) query;
-    http_request_update: (record {url:text; method:text; body:vec nat8; headers:vec record {text; text}}) -> (record {body:vec nat8; headers:vec record {text; text}; upgrade:opt bool; streaming_strategy:opt variant {Callback:record {token:vec nat8; callback:func (vec nat8) -> (opt record {token:opt vec nat8; body:vec nat8}) query}}; status_code:nat16});
+service : {
+    http_request: (
+        record {
+            url: text;
+            method: text;
+            body: vec nat8;
+            headers: vec record { text; text };
+            certificate_version: opt nat16;
+        }
+    ) -> (
+        record {
+            body: vec nat8;
+            headers: vec record { text; text };
+            upgrade: opt bool;
+            streaming_strategy: opt variant {
+                Callback: record {
+                    token: vec nat8;
+                    callback: func (vec nat8) -> (
+                        opt record {
+                            token: opt vec nat8;
+                            body: vec nat8;
+                        }
+                    ) query;
+                }
+            };
+            status_code: nat16;
+        }
+    ) query;
+
+    http_request_update: (
+        record {
+            url: text;
+            method: text;
+            body: vec nat8;
+            headers: vec record { text; text };
+        }
+    ) -> (
+        record {
+            body: vec nat8;
+            headers: vec record { text; text };
+            upgrade: opt bool;
+            streaming_strategy: opt variant {
+                Callback: record {
+                    token: vec nat8;
+                    callback: func (vec nat8) -> (
+                        opt record {
+                            token: opt vec nat8;
+                            body: vec nat8;
+                        }
+                    ) query;
+                }
+            };
+            status_code: nat16;
+        }
+    );
+
+    // Endpoints for managing tasks
+    create_task: (
+        record {
+            title: text;
+            description: text;
+            dueDate: text;
+        }
+    ) -> (record {
+        id: text;
+        title: text;
+        description: text;
+        dueDate: int;
+        createdAt: int;
+        updatedAt: opt int;
+        completed: bool;
+    });
+
+    get_all_tasks: () -> (vec record {
+        id: text;
+        title: text;
+        description: text;
+        dueDate: int;
+        createdAt: int;
+        updatedAt: opt int;
+        completed: bool;
+    });
+
+    get_task_by_id: (text) -> (opt record {
+        id: text;
+        title: text;
+        description: text;
+        dueDate: int;
+        createdAt: int;
+        updatedAt: opt int;
+        completed: bool;
+    });
+
+    update_task_by_id: (
+        record {
+            id: text;
+            title: opt text;
+            description: opt text;
+            dueDate: opt text;
+        }
+    ) -> (opt record {
+        id: text;
+        title: text;
+        description: text;
+        dueDate: int;
+        createdAt: int;
+        updatedAt: opt int;
+        completed: bool;
+    });
+
+    delete_task_by_id: (text) -> (opt record {
+        id: text;
+        title: text;
+        description: text;
+        dueDate: int;
+        createdAt: int;
+        updatedAt: opt int;
+        completed: bool;
+    });
+
+    search_tasks_by_title: (text) -> (vec record {
+        id: text;
+        title: text;
+        description: text;
+        dueDate: int;
+        createdAt: int;
+        updatedAt: opt int;
+        completed: bool;
+    });
+
+    mark_task_as_completed: (text) -> (opt record {
+        id: text;
+        title: text;
+        description: text;
+        dueDate: int;
+        createdAt: int;
+        updatedAt: opt int;
+        completed: bool;
+    });
+
+    mark_task_as_incomplete: (text) -> (opt record {
+        id: text;
+        title: text;
+        description: text;
+        dueDate: int;
+        createdAt: int;
+        updatedAt: opt int;
+        completed: bool;
+    });
+
+    get_all_completed_tasks: () -> (vec record {
+        id: text;
+        title: text;
+        description: text;
+        dueDate: int;
+        createdAt: int;
+        updatedAt: opt int;
+        completed: bool;
+    });
+
+    get_all_incomplete_tasks: () -> (vec record {
+        id: text;
+        title: text;
+        description: text;
+        dueDate: int;
+        createdAt: int;
+        updatedAt: opt int;
+        completed: bool;
+    });
+
+    get_tasks_due_on_date: (text) -> (vec record {
+        id: text;
+        title: text;
+        description: text;
+        dueDate: int;
+        createdAt: int;
+        updatedAt: opt int;
+        completed: bool;
+    });
+
+    get_tasks_due_in_range: (
+        record {
+            startDate: text;
+            endDate: text;
+        }
+    ) -> (vec record {
+        id: text;
+        title: text;
+        description: text;
+        dueDate: int;
+        createdAt: int;
+        updatedAt: opt int;
+        completed: bool;
+    });
+
+    get_overdue_tasks: () -> (vec record {
+        id: text;
+        title: text;
+        description: text;
+        dueDate: int;
+        createdAt: int;
+        updatedAt: opt int;
+        completed: bool;
+    });
+
+    get_tasks_created_in_range: (
+        record {
+            startDate: text;
+            endDate: text;
+        }
+    ) -> (vec record {
+        id: text;
+        title: text;
+        description: text;
+        dueDate: int;
+        createdAt: int;
+        updatedAt: opt int;
+        completed: bool;
+    });
 }
